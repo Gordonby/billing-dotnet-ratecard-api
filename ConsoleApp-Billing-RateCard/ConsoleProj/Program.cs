@@ -14,7 +14,6 @@ using System.Configuration; //BL
 
 namespace ARMAPI_Test
 {
-#error Please update the appSettings section in app.config, then remove this statement
 
     class Program
     {
@@ -35,11 +34,22 @@ namespace ARMAPI_Test
              */
 
             // Build up the HttpWebRequest
-            string requestURL = String.Format("{0}/{1}/{2}/{3}",
+            string offerId = string.Format("MS-AZR-{0}", "0003P"); //MS-AZR-0121p
+            string currency = "USD";
+            string locale = "en-US";
+            string regionInfo = "US";
+            string filterQuery = string.Format("&$filter=OfferDurableId eq '{0}' and Currency eq '{1}' and Locale eq '{2}' and RegionInfo eq '{3}'", 
+                                                offerId,
+                                                currency,
+                                                locale,
+                                                regionInfo);
+
+            string requestURL = String.Format("{0}/{1}/{2}/{3}{4}",
                        ConfigurationManager.AppSettings["ARMBillingServiceURL"],
                        "subscriptions",
                        ConfigurationManager.AppSettings["SubscriptionID"],
-                       "providers/Microsoft.Commerce/RateCard?api-version=2016-08-31-preview&$filter=OfferDurableId eq 'MS-AZR-0121p' and Currency eq 'USD' and Locale eq 'en-US' and RegionInfo eq 'US'");
+                       "providers/Microsoft.Commerce/RateCard?api-version=2016-08-31-preview",
+                       filterQuery);
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestURL);
 
             // Add the OAuth Authorization header, and Content Type header
@@ -58,20 +68,19 @@ namespace ARMAPI_Test
                 // Pipes the stream to a higher level stream reader with the required encoding format. 
                 StreamReader readStream = new StreamReader(receiveStream, Encoding.UTF8);
                 var rateCardResponse = readStream.ReadToEnd();
-                Console.WriteLine("RateCard stream received.  Press ENTER to continue with raw output.");
-                Console.ReadLine();
-                Console.WriteLine(rateCardResponse);
-                Console.WriteLine("Raw output complete.  Press ENTER to continue with JSON output.");
-                Console.ReadLine();
+
+                //Write to the file system
+                var path = string.Format("{0}\\{1}-{2}-{3}.json", Environment.CurrentDirectory, offerId, currency, DateTime.Now.ToString("yyyyMMdd"));
+                System.IO.File.WriteAllText(path, rateCardResponse);
 
                 // Convert the Stream to a strongly typed RateCardPayload object.  
                 // You can also walk through this object to manipulate the individuals member objects. 
-                RateCardPayload payload = JsonConvert.DeserializeObject<RateCardPayload>(rateCardResponse);
-                Console.WriteLine(rateCardResponse.ToString());
-                response.Close();
-                readStream.Close();
-                Console.WriteLine("JSON output complete.  Press ENTER to close.");
-                Console.ReadLine();
+                //RateCardPayload payload = JsonConvert.DeserializeObject<RateCardPayload>(rateCardResponse);
+                //Console.WriteLine(rateCardResponse.ToString());
+                //response.Close();
+                //readStream.Close();
+                //Console.WriteLine("JSON output complete.  Press ENTER to close.");
+                //Console.ReadLine();
             }
             catch(Exception e)
             {
